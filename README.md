@@ -3,9 +3,6 @@
  为免争议，不准备支持任何需要登陆的功能<br>
  当前还在更新，而且功能并不完善<br>
 
-# Usage / 用法
- from bili_api import [所需要的模块]<br>
-
 ## 现在支持的模块有:
 video_stat/获取视频的常规数据<br>
 video_tags/获取视频的标签<br>
@@ -17,6 +14,10 @@ reply/同一文章/视频/专栏下所有评论<br>
 rreply/某一评论下的评论，即楼中楼<br>
 search_video/直接搜索视频得到的结果<br>
 search_user/直接搜索用户得到的结果<br>
+
+# Usage / 用法
+
+    from bili_api import [所需要的模块]
 
 任何函数的返回值都应当是一个Bilibili_Response对象<br>
 例如：<br>
