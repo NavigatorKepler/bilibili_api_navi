@@ -45,4 +45,4 @@ search_user/直接搜索用户得到的结果<br>
 >         EmptyMap 99001 没有剧情图的互动视频 / ServerErr -500 服务器错误 / Forbidden -412 请求被拦截（可能中了反爬）<br>
 
 # 参见
-[SocialSisterYi/bilibili-API-collect](https:://github.com/SocialSisterYi/bilibili-API-collect 'SocialSisterYi/bilibili-API-collect')<br>
+[SocialSisterYi/bilibili-API-collect](https://github.com/SocialSisterYi/bilibili-API-collect 'SocialSisterYi/bilibili-API-collect')<br>
