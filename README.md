@@ -6,6 +6,18 @@
 # Usage / 用法
  from bili_api import [所需要的模块]<br>
 
+## 现在支持的模块有:
+video_stat/获取视频的常规数据<br>
+video_tags/获取视频的标签<br>
+user_info/获取用户的常规数据<br>
+user_videos/获取用户发布的视频<br>
+
+## 计划支持:
+reply/同一文章/视频/专栏下所有评论<br>
+rreply/某一评论下的评论，即楼中楼<br>
+search_video/直接搜索视频得到的结果<br>
+search_user/直接搜索用户得到的结果<br>
+
  任何函数的返回值都应当是一个Bilibili_Response对象<br>
  例如：<br>
     from bili_api import video_stat<br>
@@ -29,15 +41,3 @@
 > 仅视频：NotExist -404 视频不存在 / NeedLogin -403 视频需要登陆 / Hidden 62002 视频被隐藏<br>
 >         Unpublish 62003 视频已过审，等待发布 / UnderReview 62004 视频审核中<br>
 >         EmptyMap 99001 没有剧情图的互动视频 / ServerErr -500 服务器错误 / Forbidden -412 请求被拦截（可能中了反爬）<br>
-
-## 现在支持的模块有:
--video_stat/获取视频的常规数据<br>
--video_tags/获取视频的标签<br>
--user_info/获取用户的常规数据<br>
--user_videos/获取用户发布的视频<br>
-
-## 计划支持:
--reply/同一文章/视频/专栏下所有评论<br>
--rreply/某一评论下的评论，即楼中楼<br>
--search_video/直接搜索视频得到的结果<br>
--search_user/直接搜索用户得到的结果<br>
