@@ -20,6 +20,7 @@ search_user/直接搜索用户得到的结果<br>
 
 任何函数的返回值都应当是一个Bilibili_Response对象<br>
 例如：<br>
+
     from bili_api import video_stat<br>
     a = video_stat(2)<br>
     print(a)                # <bili_api.Bilibili_Response object at 0x000001F0686B40A0><br>
