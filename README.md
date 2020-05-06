@@ -43,3 +43,6 @@ search_user/直接搜索用户得到的结果<br>
 > 仅视频：NotExist -404 视频不存在 / NeedLogin -403 视频需要登陆 / Hidden 62002 视频被隐藏<br>
 >         Unpublish 62003 视频已过审，等待发布 / UnderReview 62004 视频审核中<br>
 >         EmptyMap 99001 没有剧情图的互动视频 / ServerErr -500 服务器错误 / Forbidden -412 请求被拦截（可能中了反爬）<br>
+
+# 参见
+[SocialSisterYi/bilibili-API-collect](https:://github.com/SocialSisterYi/bilibili-API-collect)<br>
