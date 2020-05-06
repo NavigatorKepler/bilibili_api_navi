@@ -1,0 +1,2 @@
+# bilibili_api_navi
+ 尝试用更便捷的方式调取bilibili的api，不准备支持任何需要登陆的功能
