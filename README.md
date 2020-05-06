@@ -21,11 +21,11 @@ search_user/直接搜索用户得到的结果<br>
 任何函数的返回值都应当是一个Bilibili_Response对象<br>
 例如：<br>
 
-    from bili_api import video_stat<br>
-    a = video_stat(2)<br>
-    print(a)                # <bili_api.Bilibili_Response object at 0x000001F0686B40A0><br>
+    from bili_api import video_stat
+    a = video_stat(2)
+    print(a)                # <bili_api.Bilibili_Response object at 0x000001F0686B40A0>
     print(a.data)<br>
-    # {'av': 2, 'bvid': 'BV1xx411c7mD', 'title': '字幕君交流场所', 'category_id': 12, 'category': '', 'uploader_id': 2, 'uploader': '碧诗', 'desc': 'www', 'is_cooperation': 0, 'elec': 0, 'copyright': 2, 'no_reprint': 0, 'pubdate': 1252458549, 'view': 2111606, 'reply': 63193, 'favorite': 60215, 'coin': 21826, 'share': 8986, 'like': 102266}<br>
+    # {'av': 2, 'bvid': 'BV1xx411c7mD', 'title': '字幕君交流场所', 'category_id': 12, 'category': '', 'uploader_id': 2, 'uploader': '碧诗', 'desc': 'www', 'is_cooperation': 0, 'elec': 0, 'copyright': 2, 'no_reprint': 0, 'pubdate': 1252458549, 'view': 2111606, 'reply': 63193, 'favorite': 60215, 'coin': 21826, 'share': 8986, 'like': 102266}
 
 ## Bilibili_Response
  一个Bilibili_Response共有六个属性<br>
