@@ -262,7 +262,6 @@ def user_videos(mid):       # 需要翻页，如果不sleep容易导致翻车
         video_list = []
         while 1:
             response = requests.get(api, params={'mid':mid, 'ps':20, 'pn':page_count}, headers = random_head())
-            sleep(0.1) # 为了防止过快导致封ip，sleep一下
             if response.status_code == 412:
                 return Bilibili_Response(id=mid, type='videolist_user',
                                         stat='AntiCrawl', stat_code=412,
@@ -270,12 +269,13 @@ def user_videos(mid):       # 需要翻页，如果不sleep容易导致翻车
             main_content = json.loads(response.content)
             if main_content["code"] == 0:
                 data = main_content["data"]
-                list = data['list']
+                _list = data['list']
                 # tlist = list['tlist']
-                vlist = list['vlist']
+                vlist = _list['vlist']
 
                 if not vlist:
                     break
+                sleep(0.1) # 为了防止过快导致封ip，sleep一下
 
                 for i in vlist:
                     video = {'aid':i['aid'], 'bvid':i['bvid']}
@@ -295,6 +295,41 @@ def user_videos(mid):       # 需要翻页，如果不sleep容易导致翻车
                              level='Error', data={})
 
 def user_info(mid):
+    api = 'http://api.bilibili.com/x/space/acc/info'
+    trytimes = 3
+    while trytimes > 0:
+        trytimes -= 1
+        info = {}
+        response = requests.get(api, params={'mid':mid}, headers = random_head())
+        if response.status_code == 412:
+            return Bilibili_Response(id=mid, type='userinfo',
+                                        stat='AntiCrawl', stat_code=412,
+                                        level='Error', data={})
+        main_content = json.loads(response.content)
+        if main_content['code'] == 0:
+            data = main_content['data']
+            info['mid'] = data['mid']
+            info['name'] = data['name']
+            info['fans'] = -1
+            info['attention'] = -1
+            info['face'] = data['face']
+            info['sign'] = data['sign']
+            info['level'] = data['level']
+            info['role'] = data['official']['role']
+            info['role_title'] = data['official']['title']
+            info['role_desc'] = data['official']['desc']
+            return Bilibili_Response(id=mid, type='userinfo',
+                                        stat='Alive', stat_code=0,
+                                        level='Debug', data=info)
+        else:
+            return Bilibili_Response(id=mid, type='userinfo',
+                                        stat='Unknown', stat_code=main_content['code'],
+                                        level='Error', data=main_content)
+    return Bilibili_Response(id=mid, type='userinfo',
+                             stat='FetchErr', stat_code=-1,
+                             level='Error', data={})
+
+def user_info2(mid):
     api = 'http://api.bilibili.com/x/web-interface/card'
     trytimes = 3
     while trytimes > 0:
@@ -315,6 +350,9 @@ def user_info(mid):
             info['face'] = data['face']
             info['sign'] = data['sign']
             info['level'] = data['level_info']['current_level']
+            info['role'] = data['Official']['role']
+            info['role_title'] = data['Official']['title']
+            info['role_desc'] = data['Official']['desc']
             return Bilibili_Response(id=mid, type='userinfo',
                                         stat='Alive', stat_code=0,
                                         level='Debug', data=info)
@@ -325,3 +363,31 @@ def user_info(mid):
     return Bilibili_Response(id=mid, type='userinfo',
                              stat='FetchErr', stat_code=-1,
                              level='Error', data={})
+
+def rreply(oid, root, types):
+    api = 'http://api.bilibili.com/x/v2/reply/reply'
+    trytimes = 3
+    while trytimes:
+        trytimes -= 1
+        page_count = 1
+        reply_list = []
+        while 1:
+            response = requests.get(api, params={"oid":oid, "root":root, "type":types})
+            if response.status_code == 412:
+                return Bilibili_Response(id=oid, type='rreply',
+                                        stat='AntiCrawl', stat_code=412,
+                                        level='Error', data={})
+            
+            main_content = json.loads(response.content)
+            data = main_content['data']
+            
+            
+            
+            sleep(0.1)
+
+def reply(id, types=1, sort=0):
+    api = 'http://api.bilibili.com/x/v2/reply'
+    trytimes = 3
+    while trytimes:
+        trytimes -= 1
+        page_count = 1
