@@ -4,6 +4,42 @@ import random
 import json
 import requests
 
+def bv_av_interchange(input_data, Force=None):
+    table='fZodR9XQDSUm21yCkr6zBqiveYah8bt4xsWpHnJE7jL5VG3guMTKNPAwcF'
+    tr={}
+    for i in range(58):
+        tr[table[i]]=i
+    s=[11,10,3,8,4,6]
+    xor=177451812
+    add=8728348608
+    def bv_av(x):
+        r=0
+        for i in range(6):
+            r += tr[x[s[i]]]*58**i
+        return (r-add)^xor
+    def av_bv(n2):
+        n2 = (n2 ^ xor) + add
+        n = list('BV1  4 1 7  ')
+        for i in range(6):
+            n[s[i]] = table[n2 // 58 ** i % 58]
+        return ''.join(n)
+    
+    input_data = str(input_data)
+    if not Force:
+        if input_data.startswith('BV'):
+            Force = 'BV'
+        elif input_data.startswith('av') or input_data.isdigit():
+            Force = 'av'
+        else:
+            return
+    elif Force not in ('BV', 'av'):
+        return
+
+    if Force == 'BV':
+        return bv_av(input_data)
+    else:
+        return av_bv(int(input_data))
+
 def sql_replace(string):
     string = str(string)
     string = string.replace("'", "''")
@@ -385,7 +421,7 @@ def rreply(oid, root, types=1, ps=48):
                     return Bilibili_Response(id=oid, type='rreply',
                                         stat='Alive', stat_code=0,
                                         level='Debug', data=reply_list)
-                sleep(0.15)
+                sleep(0.1)
                 if data["replies"] is None:
                     return Bilibili_Response(id=oid, type='rreply',
                                             stat='EmptyRreply', stat_code=0,
@@ -414,7 +450,7 @@ def rreply(oid, root, types=1, ps=48):
             
             page_count += 1
 
-def reply(jid, types=1, sort=0, ps=48):
+def reply(jid, types=1, recursive=True, sort=0, ps=48):
     api = 'http://api.bilibili.com/x/v2/reply'
     trytimes = 3
     while trytimes:
@@ -444,6 +480,8 @@ def reply(jid, types=1, sort=0, ps=48):
                     piece = {}
                     piece['rpid'] = one['rpid'] # 回复号
                     piece['oid'] = one['oid']   # 主体编号
+                    piece['dialog'] = None # 对话编号
+                    piece['root'] = None # 主楼号
                     piece['ctime'] = one['ctime'] # 发表时间
                     piece['like'] = one['like'] # 点赞数
                     
@@ -455,8 +493,17 @@ def reply(jid, types=1, sort=0, ps=48):
                     
                     piece['message'] = one['content']['message']
                     reply_list.append(piece)
+                    if recursive and one['replies'] != None:
+                        recursive_comments = rreply(jid, one['rpid'], types, ps)
+                        if recursive_comments.stat_code == 0:
+                            for item in recursive_comments.data:
+                                reply_list.append(item)
+                        else:
+                            return Bilibili_Response(id=jid, type='reply',
+                                        stat='SubError', stat_code=recursive_comments.stat_code,
+                                        level='Error', data=[])
             else:
-                return Bilibili_Response(id=id, type='reply',
+                return Bilibili_Response(id=jid, type='reply',
                                         stat='Unknown', stat_code=main_content['code'],
                                         level='Error', data=main_content)
             

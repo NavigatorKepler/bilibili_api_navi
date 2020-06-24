@@ -59,6 +59,7 @@ search_user/直接搜索用户得到的结果
 | UnderReview | 62004    | 视频审核中 |
 | EmptyMap    | 99001    | 没有剧情图的互动视频 |
 | ServerErr   | -500     | 服务器错误 |
+| SubError    | --       | 子评论错误，错误码不定 |
 
 
 
