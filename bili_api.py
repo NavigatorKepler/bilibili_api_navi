@@ -1,5 +1,4 @@
 from time import *
-from tqdm import tqdm
 import random
 import json
 import requests
@@ -116,12 +115,11 @@ class Bilibili_Response(object):
         # 主体部分
         self.data = data
 
-def video_stat(av):
+def video_stat(av, retry=3):
     api = "http://api.bilibili.com/x/web-interface/view"
-    trytimes = 3
-    while trytimes > 0:
+    while retry > 0:
         try:
-            trytimes -= 1
+            retry -= 1
             cid = random.randint(1, 140000000)
             response = requests.get(api, params={"aid": av,"cid": cid},
                                     headers = random_head(),
@@ -238,18 +236,15 @@ def video_stat(av):
                                      stat='Unknown', stat_code=main_content["code"],
                                      level='Error', data=main_content)
 
-        # tqdm.write(f"视频av{av}剩余{trytimes}次机会！")
         sleep(1)
-    # tqdm.write(f"视频av{av}基本信息获取失败！")
     return Bilibili_Response(id=av, type='video',
                              stat='FetchErr', stat_code=-1,
                              level='Error', data={})
 
-def video_tags(av):
+def video_tags(av, retry=3):
     api = "http://api.bilibili.com/x/tag/archive/tags"
-    trytimes = 3
-    while trytimes > 0:
-        trytimes -= 1
+    while retry > 0:
+        retry -= 1
         response = requests.get(api, params={"aid": av},headers = random_head())
         if response.status_code == 412:
             # return("AntiCrawl", ())
@@ -289,11 +284,10 @@ def video_tags(av):
                              stat='FetchErr', stat_code=-1,
                              level='Error', data={})
 
-def user_videos(mid):       # 需要翻页，如果不sleep容易导致翻车
+def user_videos(mid, retry=3):       # 需要翻页，如果不sleep容易导致翻车
     api = 'http://api.bilibili.com/x/space/arc/search'
-    trytimes = 3
-    while trytimes > 0:
-        trytimes -= 1
+    while retry > 0:
+        retry -= 1
         page_count = 1
         video_list = []
         while 1:
@@ -330,24 +324,26 @@ def user_videos(mid):       # 需要翻页，如果不sleep容易导致翻车
                              stat='FetchErr', stat_code=-1,
                              level='Error', data={})
 
-def user_info(mid):
-    api = 'http://api.bilibili.com/x/space/acc/info'
-    trytimes = 3
-    while trytimes > 0:
-        trytimes -= 1
+def user_info(mid, retry=3):
+    api1 = 'http://api.bilibili.com/x/space/acc/info'
+    api2 = 'https://api.bilibili.com/x/relation/stat'#vmid=mid
+    while retry > 0:
+        retry -= 1
         info = {}
-        response = requests.get(api, params={'mid':mid}, headers = random_head())
-        if response.status_code == 412:
+        response = requests.get(api1, params={'mid':mid}, headers = random_head())
+        response_extra = requests.get(api2, params={'vmid':mid}, headers = random_head())
+        if response.status_code == 412 or response_extra.status_code == 412:
             return Bilibili_Response(id=mid, type='userinfo',
                                         stat='AntiCrawl', stat_code=412,
                                         level='Error', data={})
         main_content = json.loads(response.content)
-        if main_content['code'] == 0:
+        extra_content = json.loads(response_extra.content)
+        if main_content['code'] == 0 and extra_content['code'] == 0:
             data = main_content['data']
             info['mid'] = data['mid']
             info['name'] = data['name']
-            info['fans'] = -1
-            info['attention'] = -1
+            info['fans'] = extra_content['data']['follower']
+            info['attention'] = extra_content['data']['following']
             info['face'] = data['face']
             info['sign'] = data['sign']
             info['level'] = data['level']
@@ -359,17 +355,16 @@ def user_info(mid):
                                         level='Debug', data=info)
         else:
             return Bilibili_Response(id=mid, type='userinfo',
-                                        stat='Unknown', stat_code=main_content['code'],
-                                        level='Error', data=main_content)
+                                        stat='Unknown', stat_code=(main_content['code'], extra_content['code']),
+                                        level='Error', data=(main_content, extra_content))
     return Bilibili_Response(id=mid, type='userinfo',
                              stat='FetchErr', stat_code=-1,
                              level='Error', data={})
 
-def user_info2(mid):
+def user_info2(mid, retry=3):
     api = 'http://api.bilibili.com/x/web-interface/card'
-    trytimes = 3
-    while trytimes > 0:
-        trytimes -= 1
+    while retry > 0:
+        retry -= 1
         info = {}
         response = requests.get(api, params={'mid':mid, 'photo':'false'}, headers = random_head())
         if response.status_code == 412:
@@ -400,11 +395,10 @@ def user_info2(mid):
                              stat='FetchErr', stat_code=-1,
                              level='Error', data={})
 
-def rreply(oid, root, types=1, ps=48):
+def rreply(oid, root, types=1, ps=48, retry=3):
     api = 'http://api.bilibili.com/x/v2/reply/reply'
-    trytimes = 3
-    while trytimes:
-        trytimes -= 1
+    while retry:
+        retry -= 1
         page_count = 1
         reply_list = []
         while 1:
@@ -450,11 +444,10 @@ def rreply(oid, root, types=1, ps=48):
             
             page_count += 1
 
-def reply(jid, types=1, recursive=True, sort=0, ps=48):
+def reply(jid, types=1, recursive=True, sort=0, ps=48, retry=3):
     api = 'http://api.bilibili.com/x/v2/reply'
-    trytimes = 3
-    while trytimes:
-        trytimes -= 1
+    while retry:
+        retry -= 1
         page_count = 1
         reply_list = []
         while 1:
