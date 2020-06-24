@@ -364,7 +364,7 @@ def user_info2(mid):
                              stat='FetchErr', stat_code=-1,
                              level='Error', data={})
 
-def rreply(oid, root, types=1):
+def rreply(oid, root, types=1, ps=48):
     api = 'http://api.bilibili.com/x/v2/reply/reply'
     trytimes = 3
     while trytimes:
@@ -372,7 +372,7 @@ def rreply(oid, root, types=1):
         page_count = 1
         reply_list = []
         while 1:
-            response = requests.get(api, params={"oid":oid, "root":root, "type":types, 'pn':page_count})
+            response = requests.get(api, params={"oid":oid, "root":root, "type":types, 'pn':page_count, 'ps':ps}, headers = random_head())
             if response.status_code == 412:
                 return Bilibili_Response(id=oid, type='rreply',
                                         stat='AntiCrawl', stat_code=412,
@@ -380,14 +380,12 @@ def rreply(oid, root, types=1):
 
             main_content = json.loads(response.content)
             data = main_content['data']
-            if (page_count - 1) * 20 >= data['page']['count']:
-                return Bilibili_Response(id=oid, type='rreply',
+            if main_content['code'] == 0:
+                if (page_count - 1) * ps >= data['page']['count']:
+                    return Bilibili_Response(id=oid, type='rreply',
                                         stat='Alive', stat_code=0,
                                         level='Debug', data=reply_list)
-
-            sleep(0.15)
-
-            if main_content['code'] == 0:
+                sleep(0.15)
                 if data["replies"] is None:
                     return Bilibili_Response(id=oid, type='rreply',
                                             stat='EmptyRreply', stat_code=0,
@@ -396,6 +394,7 @@ def rreply(oid, root, types=1):
                     piece = {}
                     piece['rpid'] = one['rpid'] # 回复号
                     piece['oid'] = one['oid']   # 主体编号
+                    piece['dialog'] = one['dialog'] # 对话编号
                     piece['root'] = one['root'] # 主楼号
                     piece['ctime'] = one['ctime'] # 发表时间
                     piece['like'] = one['like'] # 点赞数
@@ -415,9 +414,50 @@ def rreply(oid, root, types=1):
             
             page_count += 1
 
-def reply(id, types=1, sort=0):
+def reply(jid, types=1, sort=0, ps=48):
     api = 'http://api.bilibili.com/x/v2/reply'
     trytimes = 3
     while trytimes:
         trytimes -= 1
         page_count = 1
+        reply_list = []
+        while 1:
+            response = requests.get(api, params={"oid":jid, "type":types, 'pn':page_count, 'ps':ps, 'sort':sort}, headers = random_head())
+            if response.status_code == 412:
+                return Bilibili_Response(id=jid, type='reply',
+                                        stat='AntiCrawl', stat_code=412,
+                                        level='Error', data=[])
+
+            main_content = json.loads(response.content)
+            data = main_content['data']
+            if main_content['code'] == 0:
+                if (page_count - 1) * ps >= data['page']['count']:
+                    return Bilibili_Response(id=jid, type='reply',
+                                            stat='Alive', stat_code=0,
+                                            level='Debug', data=reply_list)
+                sleep(0.15)
+                if data["replies"] is None:
+                    return Bilibili_Response(id=jid, type='reply',
+                                            stat='EmptyReply', stat_code=0,
+                                            level='Debug', data=[])
+                for one in data["replies"]:
+                    piece = {}
+                    piece['rpid'] = one['rpid'] # 回复号
+                    piece['oid'] = one['oid']   # 主体编号
+                    piece['ctime'] = one['ctime'] # 发表时间
+                    piece['like'] = one['like'] # 点赞数
+                    
+                    member = one['member']      # 评论者情况
+                    piece['mid'] = int(member['mid'])
+                    piece['uname'] = member['uname']
+                    piece['sign'] = member['sign']
+                    piece['level'] = member['level_info']['current_level']
+                    
+                    piece['message'] = one['content']['message']
+                    reply_list.append(piece)
+            else:
+                return Bilibili_Response(id=id, type='reply',
+                                        stat='Unknown', stat_code=main_content['code'],
+                                        level='Error', data=main_content)
+            
+            page_count += 1
