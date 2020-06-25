@@ -357,9 +357,10 @@ def user_info2(mid, retry=3):
                                         stat='AntiCrawl', stat_code=412,
                                         level='Error', data={})
         main_content = json.loads(response.content)
+        sleep(random.random())      # 由于这个api的尿性,sleep一下防封
         if main_content["code"] == 0:
             data = main_content['data']['card']
-            info['mid'] = data['mid']
+            info['mid'] = int(data['mid'])
             info['name'] = data['name']
             info['fans'] = data['fans']
             info['attention'] = data['attention']
