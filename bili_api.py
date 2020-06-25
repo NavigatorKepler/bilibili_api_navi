@@ -3,7 +3,7 @@ import random
 import json
 import requests
 
-def bv_av_interchange(input_data, Force=None):
+def bv_av_conv(input_data, Force=None):
     table='fZodR9XQDSUm21yCkr6zBqiveYah8bt4xsWpHnJE7jL5VG3guMTKNPAwcF'
     tr={}
     for i in range(58):
@@ -22,12 +22,17 @@ def bv_av_interchange(input_data, Force=None):
         for i in range(6):
             n[s[i]] = table[n2 // 58 ** i % 58]
         return ''.join(n)
-    
+
     input_data = str(input_data)
     if not Force:
         if input_data.startswith('BV'):
             Force = 'BV'
-        elif input_data.startswith('av') or input_data.isdigit():
+            if len(input_data) != 12:
+                return
+        elif input_data.startswith('av'):
+            Force = 'av'
+            input_data = input_data[2:]
+        elif input_data.isdigit():
             Force = 'av'
         else:
             return
@@ -115,113 +120,89 @@ class Bilibili_Response(object):
         # 主体部分
         self.data = data
 
-def video_stat(av, retry=3):
+def video_stat(video_id, retry=3):
+    if isinstance(video_id, str):
+        av = bv_av_conv(video_id)
+    else:
+        av = video_id
     api = "http://api.bilibili.com/x/web-interface/view"
     while retry > 0:
-        try:
-            retry -= 1
-            cid = random.randint(1, 140000000)
-            response = requests.get(api, params={"aid": av,"cid": cid},
-                                    headers = random_head(),
-                                    timeout = 3,
-                                    )
-            if response.status_code == 412:
-                return Bilibili_Response(id=av, type='video',
-                                         stat='AntiCrawl', stat_code=412,
-                                         level='Error', data={})
-        except KeyboardInterrupt:
-            # return("KeyStop", ())
+        retry -= 1
+        cid = random.randint(1, 140000000)
+        response = requests.get(api, params={"aid": av,"cid": cid},
+                                headers = random_head(),
+                                timeout = 3)
+        if response.status_code == 412:
             return Bilibili_Response(id=av, type='video',
-                                     stat='Keystop', stat_code=-1,
-                                     level='Info', data={})
-        except Exception as e: # 网络错误
-            # return ("NetworkErr", ())
-            return Bilibili_Response(id=av, type='video',
-                                     stat='NetworkErr', stat_code=-1,
-                                     level='Error', data={})
+                                        stat='AntiCrawl', stat_code=412,
+                                        level='Error', data={})
         main_content = json.loads(response.text)
 
         if main_content["code"] == 0:
-            try:
-                data = main_content["data"]  # 概况部分
-                bvid = data['bvid']   # bv号，这是个字符串
-                av_num = data["aid"]  # av号
-                title = data["title"]  # 视频标题
-                category = data["tname"]  # 小分区名称
-                category_id = data["tid"]  # 小分区ID
-                copyright = data["copyright"]  # 1为原创，2为转载
+            container = {}
+            data = main_content["data"]                     # 概况部分
+            container['bvid'] = data['bvid']                             # bv号，这是个字符串
+            container['av'] = data["aid"]                            # av号
+            container['title'] = data["title"]                           # 视频标题
+            container['category'] = data["tname"]                        # 小分区名称
+            container['category_id'] = data["tid"]                       # 小分区ID
+            container['copyright'] = data["copyright"]                   # 1为原创，2为转载
 
-                owner = data["owner"]  # 投稿人信息
-                uploader = owner["name"]  # 昵称
-                uploader_id = owner["mid"]  # 投稿人mid
-                pubdate = data["pubdate"]  # 过审时间，是时间戳，未转换
+            owner = data["owner"]                           # 投稿人信息
+            container['uploader'] = owner["name"]                        # 昵称
+            container['uploader_id'] = owner["mid"]                      # 投稿人mid
+            container['pubdate'] = data["pubdate"]                       # 过审时间，是时间戳，未转换
 
-                rights = data["rights"]  # 权限部分
-                is_cooperation = rights["is_cooperation"]  # 是否为合作视频
-                elec = rights['elec']
-                no_reprint = rights["no_reprint"]  # 1禁止转载，0允许转载
-                desc = data["desc"]  # 简介
+            rights = data["rights"]                         # 权限部分
+            container['is_cooperation'] = rights["is_cooperation"]       # 是否为合作视频
+            container['elec'] = rights['elec']
+            container['no_reprint'] = rights["no_reprint"]               # 1禁止转载，0允许转载
+            container['desc'] = data["desc"]                             # 简介
+            
+            container['forward'] = data['forward']                       # 是否撞车,如果撞车则不为空
 
-                stat = data["stat"]  # 数据部分
-                view = stat["view"]  # 播放量
-                reply = stat["reply"]  # 回复数
-                favorite = stat["favorite"]  # 收藏数
-                coin = stat["coin"]  # 投币数
-                share = stat["share"]  # 分享数
-                like = stat["like"]  # 点赞数
-                return Bilibili_Response(id=av, type='video',
-                                     stat='Alive', stat_code=0,
-                                     level='Debug', data={'av':av_num, 'bvid':bvid,'title':title,
-                                                          'category_id':category_id, 'category':category,
-                                                          'uploader_id':uploader_id, 'uploader':uploader,
-                                                          'desc':desc,
-                                                          'is_cooperation':is_cooperation, 'elec':elec,
-                                                          'copyright':copyright, 'no_reprint':no_reprint,
-                                                          'pubdate':pubdate, 'view':view, 'reply':reply,
-                                                          'favorite':favorite, 'coin':coin, 'share':share, 'like':like})
-            except:
-                return Bilibili_Response(id=av, type='video',
-                                     stat='Unknown', stat_code=-1,
-                                     level='Error', data=main_content)
+            stat = data["stat"]                             # 数据部分
+            container['view'] = stat["view"]                             # 播放量
+            container['reply'] = stat["reply"]                           # 回复数
+            container['favorite'] = stat["favorite"]                     # 收藏数
+            container['coin'] = stat["coin"]                             # 投币数
+            container['share'] = stat["share"]                           # 分享数
+            container['like'] = stat["like"]                             # 点赞数
+            return Bilibili_Response(id=av, type='video',
+                                    stat='Alive', stat_code=0,
+                                    level='Debug', data=container)
 
         elif main_content["code"] == -404: #视频不存在
-            # return ("NotExist", ())
             return Bilibili_Response(id=av, type='video',
                                      stat='NotExist', stat_code=main_content["code"],
                                      level='Info', data=main_content)
 
         elif main_content["code"] == -403: #视频需要登陆
-            # return ("NeedLogin", ())
             return Bilibili_Response(id=av, type='video',
                                      stat='NeedLogin', stat_code=main_content["code"],
                                      level='Info', data=main_content)
 
         elif main_content["code"] == 62002: #视频不可见
-            # return ("Hidden", ())
             return Bilibili_Response(id=av, type='video',
                                      stat='Hidden', stat_code=main_content["code"],
                                      level='Info', data=main_content)
 
         elif main_content["code"] == 62003: #稿件已审核通过，等待发布中
-            # return ("UnPublish", ())
             return Bilibili_Response(id=av, type='video',
                                      stat='UnPublish', stat_code=main_content["code"],
                                      level='Info', data=main_content)
 
         elif main_content["code"] == 62004: #视频审核中
-            # return ("UnderReview", ())
             return Bilibili_Response(id=av, type='video',
                                      stat='UnderReview', stat_code=main_content["code"],
                                      level='Info', data=main_content)
 
         elif main_content['code'] == 99001:  #互动视频，但是没有剧情图
-            # return ("EmptyMap", ())
             return Bilibili_Response(id=av, type='video',
                                      stat='EmptyMap', stat_code=main_content["code"],
                                      level='Info', data=main_content)
 
         elif main_content['code'] == -500:  #服务器错误
-            # return ("ServerErr", ())
             return Bilibili_Response(id=av, type='video',
                                      stat='ServerErr', stat_code=main_content["code"],
                                      level='Error', data=main_content)
@@ -241,7 +222,11 @@ def video_stat(av, retry=3):
                              stat='FetchErr', stat_code=-1,
                              level='Error', data={})
 
-def video_tags(av, retry=3):
+def video_tags(video_id, retry=3):
+    if isinstance(video_id, str):
+        av = bv_av_conv(video_id)
+    else:
+        av = video_id
     api = "http://api.bilibili.com/x/tag/archive/tags"
     while retry > 0:
         retry -= 1
@@ -395,16 +380,18 @@ def user_info2(mid, retry=3):
                              stat='FetchErr', stat_code=-1,
                              level='Error', data={})
 
-def rreply(oid, root, types=1, ps=48, retry=3):
+def rreply(subject_id, root_id, types=1, ps=48, retry=3):
     api = 'http://api.bilibili.com/x/v2/reply/reply'
+    if isinstance(subject_id, str) and types == 1:
+        subject_id = bv_av_conv(subject_id)
     while retry:
         retry -= 1
         page_count = 1
         reply_list = []
         while 1:
-            response = requests.get(api, params={"oid":oid, "root":root, "type":types, 'pn':page_count, 'ps':ps}, headers = random_head())
+            response = requests.get(api, params={"oid":subject_id, "root":root_id, "type":types, 'pn':page_count, 'ps':ps}, headers = random_head())
             if response.status_code == 412:
-                return Bilibili_Response(id=oid, type='rreply',
+                return Bilibili_Response(id=subject_id, type='rreply',
                                         stat='AntiCrawl', stat_code=412,
                                         level='Error', data=[])
 
@@ -412,12 +399,12 @@ def rreply(oid, root, types=1, ps=48, retry=3):
             data = main_content['data']
             if main_content['code'] == 0:
                 if (page_count - 1) * ps >= data['page']['count']:
-                    return Bilibili_Response(id=oid, type='rreply',
+                    return Bilibili_Response(id=subject_id, type='rreply',
                                         stat='Alive', stat_code=0,
                                         level='Debug', data=reply_list)
                 sleep(0.1)
                 if data["replies"] is None:
-                    return Bilibili_Response(id=oid, type='rreply',
+                    return Bilibili_Response(id=subject_id, type='rreply',
                                             stat='EmptyRreply', stat_code=0,
                                             level='Debug', data=[])
                 for one in data["replies"]:
@@ -438,22 +425,24 @@ def rreply(oid, root, types=1, ps=48, retry=3):
                     piece['message'] = one['content']['message']
                     reply_list.append(piece)
             else:
-                return Bilibili_Response(id=oid, type='rreply',
+                return Bilibili_Response(id=subject_id, type='rreply',
                                         stat='Unknown', stat_code=main_content['code'],
                                         level='Error', data=main_content)
             
             page_count += 1
 
-def reply(jid, types=1, recursive=True, sort=0, ps=48, retry=3):
+def reply(subject_id, types=1, recursive=True, sort=0, ps=48, retry=3):
     api = 'http://api.bilibili.com/x/v2/reply'
+    if isinstance(subject_id, str) and types == 1:
+        subject_id = bv_av_conv(subject_id)
     while retry:
         retry -= 1
         page_count = 1
         reply_list = []
         while 1:
-            response = requests.get(api, params={"oid":jid, "type":types, 'pn':page_count, 'ps':ps, 'sort':sort}, headers = random_head())
+            response = requests.get(api, params={"oid":subject_id, "type":types, 'pn':page_count, 'ps':ps, 'sort':sort}, headers = random_head())
             if response.status_code == 412:
-                return Bilibili_Response(id=jid, type='reply',
+                return Bilibili_Response(id=subject_id, type='reply',
                                         stat='AntiCrawl', stat_code=412,
                                         level='Error', data=[])
 
@@ -461,12 +450,12 @@ def reply(jid, types=1, recursive=True, sort=0, ps=48, retry=3):
             data = main_content['data']
             if main_content['code'] == 0:
                 if (page_count - 1) * ps >= data['page']['count']:
-                    return Bilibili_Response(id=jid, type='reply',
+                    return Bilibili_Response(id=subject_id, type='reply',
                                             stat='Alive', stat_code=0,
                                             level='Debug', data=reply_list)
                 sleep(0.15)
                 if data["replies"] is None:
-                    return Bilibili_Response(id=jid, type='reply',
+                    return Bilibili_Response(id=subject_id, type='reply',
                                             stat='EmptyReply', stat_code=0,
                                             level='Debug', data=[])
                 for one in data["replies"]:
@@ -487,16 +476,20 @@ def reply(jid, types=1, recursive=True, sort=0, ps=48, retry=3):
                     piece['message'] = one['content']['message']
                     reply_list.append(piece)
                     if recursive and one['replies'] != None:
-                        recursive_comments = rreply(jid, one['rpid'], types, ps)
+                        recursive_comments = rreply(subject_id, one['rpid'], types, ps)
                         if recursive_comments.stat_code == 0:
                             for item in recursive_comments.data:
                                 reply_list.append(item)
                         else:
-                            return Bilibili_Response(id=jid, type='reply',
+                            return Bilibili_Response(id=subject_id, type='reply',
                                         stat='SubError', stat_code=recursive_comments.stat_code,
                                         level='Error', data=[])
+            elif main_content['code'] == 12002:
+                return Bilibili_Response(id=subject_id, type='reply',
+                                        stat='ClosedReply', stat_code=main_content['code'],
+                                        level='Error', data=[])
             else:
-                return Bilibili_Response(id=jid, type='reply',
+                return Bilibili_Response(id=subject_id, type='reply',
                                         stat='Unknown', stat_code=main_content['code'],
                                         level='Error', data=main_content)
             

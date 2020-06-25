@@ -10,7 +10,7 @@ user_info / 获取用户的常规数据
 user_videos / 获取用户发布的视频  
 rreply / 楼中楼  
 reply / 评论区主楼  
-bv_av_interchange / bvav互转  
+bv_av_conv / bvav互转  
 
 ## 计划支持:
 search_video/直接搜索视频得到的结果  
@@ -55,14 +55,14 @@ search_user/直接搜索用户得到的结果
 | NotExist    | -404     | 视频不存在 |
 | NeedLogin   | -403     | 视频需要登陆 |
 | Forbidden   | -412     | 请求被拦截（可能中了反爬） |
+| ServerErr   | -500     | 服务器错误 |
 | AntiCrawl   | 412      | 确实中了反爬 |
+| ClosedReply | 12002    | 评论区已关闭 |
 | Hidden      | 62002    | 视频被隐藏 |
 | Unpublish   | 62003    | 视频已过审，等待发布 |
 | UnderReview | 62004    | 视频审核中 |
 | EmptyMap    | 99001    | 没有剧情图的互动视频 |
-| ServerErr   | -500     | 服务器错误 |
-| SubError    | --       | 子评论错误，错误码不定 |
-
+| SubError    | --       | 子评论错误，错误码同前 |
 
 # 特殊说明
 
@@ -82,6 +82,8 @@ reply/rreply中types参见下表,默认为1
 | 17   | 动态（纯文字动态&分享） | 动态ID     |
 | 22   | 漫画                    | 漫画mcID   |
 | 33   | 课程                    | 课程epID   |
+
+video_stat中如forward不为空,说明视频撞车,forward的值即为撞车视频av号  
 
 # 参见
 [SocialSisterYi/bilibili-API-collect](https://github.com/SocialSisterYi/bilibili-API-collect 'SocialSisterYi/bilibili-API-collect')  
